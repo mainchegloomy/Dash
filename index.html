@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Dash爆爆</title>
+<title>Dash 爆爆</title>
 <style>
 :root{--bg1:#1b1040;--bg2:#3a1c71;--tx:#fff;--pn:rgba(10,5,30,.82);--ac:#ffc933;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
@@ -186,11 +186,15 @@ function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;update(dt);draw();r
 // leaderboard
 function lb(){try{return JSON.parse(localStorage.getItem('dd_lb')||'[]')}catch(e){return[]}}
 function esc(s){return s.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
-function table(hl){const a=lb();if(!a.length)return'<div class="sub">還沒有紀錄,成為第一名吧!</div>';
+function table(hl,a){a=a||lb();if(!a.length)return'<div class="sub">還沒有紀錄,成為第一名吧!</div>';
  return'<table>'+a.map((e,i)=>`<tr class="${e.id===hl?'me':''}"><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${esc(e.n)}</td><td>${e.s.toLocaleString()}</td></tr>`).join('')+'</table>'}
+const API='https://dash-a0d4a-default-rtdb.asia-southeast1.firebasedatabase.app';
+async function getTop(){try{const r=await fetch(API+'/scores.json?orderBy=%22s%22&limitToLast=10');if(!r.ok)throw 0;const o=await r.json()||{};return Object.entries(o).map(([id,v])=>({id,n:String(v.n||'').slice(0,12),s:+v.s||0})).sort((a,b)=>b.s-a.s)}catch(e){return null}}
+async function loadLb(hl){const el=$('lbx');if(!el)return;el.innerHTML='<div class="sub">載入排行榜中…</div>';const t=await getTop();const e2=$('lbx');if(!e2)return;e2.innerHTML=t?table(hl,t)+'<div class="sub">🌐 全球排行榜</div>':table(hl)+'<div class="sub">⚠️ 無法連線,顯示本機紀錄</div>'}
+async function submitLoad(id,s,nm){const el=$('lbx');let key=null;if(s>0){if(el)el.innerHTML='<div class="sub">上傳成績中…</div>';try{const r=await fetch(API+'/scores.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({n:nm.slice(0,12),s:s,t:{'.sv':'timestamp'}})});if(r.ok)key=(await r.json()).name}catch(e){}}loadLb(key||id)}
 function menu(){st='menu';$('ov').classList.remove('h');
- $('pn').innerHTML=`<h1>💎 DASH爆爆</h1><div class="sub">60 秒內拿下最高分!</div><input id="nm" maxlength="12" placeholder="輸入你的暱稱" value="${esc(name)}"><button id="go">開始遊戲</button><div class="sub" style="margin-top:12px">🏆 排行榜 TOP 10</div>${table()}<div class="rules">點擊 2 個以上相連的同色方塊消除<br>5 個以上:火箭 ↔↕(清整行/列)・7 個以上:💣炸彈・9 個以上:★彩虹(清同色全部)<br>連擊越多特效越華麗,填滿能量條進入 FEVER 雙倍分數</div>`;
- $('go').onclick=start}
+ $('pn').innerHTML=`<h1>💎 DASH 爆爆</h1><div class="sub">60 秒內拿下最高分!</div><input id="nm" maxlength="12" placeholder="輸入你的暱稱" value="${esc(name)}"><button id="go">開始遊戲</button><div class="sub" style="margin-top:12px">🏆 排行榜 TOP 10</div><div id="lbx"></div><div class="rules">點擊 2 個以上相連的同色方塊消除<br>5 個以上:火箭 ↔↕(清整行/列)・7 個以上:💣炸彈・9 個以上:★彩虹(清同色全部)<br>連擊越多特效越華麗,填滿能量條進入 FEVER 雙倍分數</div>`;
+ $('go').onclick=start;loadLb()}
 function start(){const v=$('nm').value.trim();name=v||'玩家';try{localStorage.setItem('dd_name',name)}catch(e){}
  ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume();
  init();st='play';$('ov').classList.add('h')}
@@ -198,8 +202,8 @@ function over(){st='over';const id=Date.now(),a=lb();a.push({id,n:name,s:Math.ro
  try{localStorage.setItem('dd_lb',JSON.stringify(top))}catch(e){}
  const rank=top.findIndex(e=>e.id===id)+1;beep(500,.3);setTimeout(()=>beep(700,.4),200);
  setTimeout(()=>{$('ov').classList.remove('h');
-  $('pn').innerHTML=`<h1>時間到!</h1><div class="big">${Math.round(sc).toLocaleString()}</div><div class="sub">最高連擊 x${maxCombo}・消除 ${cleared} 個${rank?'・🎉 第 '+rank+' 名':''}</div>${table(id)}<button id="again">再玩一次</button><button id="mn" style="margin-top:8px;background:#ffffff25;color:#fff;font-size:15px">回主選單</button>`;
-  $('again').onclick=()=>{init();st='play';$('ov').classList.add('h')};$('mn').onclick=menu},700)}
+  $('pn').innerHTML=`<h1>時間到!</h1><div class="big">${Math.round(sc).toLocaleString()}</div><div class="sub">最高連擊 x${maxCombo}・消除 ${cleared} 個${rank?'・🎉 本機第 '+rank+' 名':''}</div><div id="lbx"></div><button id="again">再玩一次</button><button id="mn" style="margin-top:8px;background:#ffffff25;color:#fff;font-size:15px">回主選單</button>`;
+  $('again').onclick=()=>{init();st='play';$('ov').classList.add('h')};$('mn').onclick=menu;submitLoad(id,Math.round(sc),name)},700)}
 cv.addEventListener('pointerdown',e=>{e.preventDefault();tap(e.clientX,e.clientY)});
 init();menu();requestAnimationFrame(loop);
 </script></body></html>
