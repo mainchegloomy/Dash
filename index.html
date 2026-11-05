@@ -189,7 +189,7 @@ function esc(s){return s.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;
 function table(hl){const a=lb();if(!a.length)return'<div class="sub">還沒有紀錄,成為第一名吧!</div>';
  return'<table>'+a.map((e,i)=>`<tr class="${e.id===hl?'me':''}"><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${esc(e.n)}</td><td>${e.s.toLocaleString()}</td></tr>`).join('')+'</table>'}
 function menu(){st='menu';$('ov').classList.remove('h');
- $('pn').innerHTML=`<h1>💎 DIAMOND DASH</h1><div class="sub">60 秒內拿下最高分!</div><input id="nm" maxlength="12" placeholder="輸入你的暱稱" value="${esc(name)}"><button id="go">開始遊戲</button><div class="sub" style="margin-top:12px">🏆 排行榜 TOP 10</div>${table()}<div class="rules">點擊 2 個以上相連的同色方塊消除<br>5 個以上:火箭 ↔↕(清整行/列)・7 個以上:💣炸彈・9 個以上:★彩虹(清同色全部)<br>連擊越多特效越華麗,填滿能量條進入 FEVER 雙倍分數</div>`;
+ $('pn').innerHTML=`<h1>💎 DASH爆爆</h1><div class="sub">60 秒內拿下最高分!</div><input id="nm" maxlength="12" placeholder="輸入你的暱稱" value="${esc(name)}"><button id="go">開始遊戲</button><div class="sub" style="margin-top:12px">🏆 排行榜 TOP 10</div>${table()}<div class="rules">點擊 2 個以上相連的同色方塊消除<br>5 個以上:火箭 ↔↕(清整行/列)・7 個以上:💣炸彈・9 個以上:★彩虹(清同色全部)<br>連擊越多特效越華麗,填滿能量條進入 FEVER 雙倍分數</div>`;
  $('go').onclick=start}
 function start(){const v=$('nm').value.trim();name=v||'玩家';try{localStorage.setItem('dd_name',name)}catch(e){}
  ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume();
