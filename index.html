@@ -25,6 +25,7 @@ tr.me td{background:#ffc93333;font-weight:700}
 <div id="ov"><div class="pn" id="pn"></div></div>
 <script>
 const COLS=8,ROWS=10,TIME=60,$=id=>document.getElementById(id);
+const BOT=/[?&]bot(=|&|$)/.test(location.search); // ?bot=1 機器人模式:關閉會遮住盤面的特效、不上傳分數
 const COL=['#ff3b4e','#2e8bff','#2ecc71','#ffc933','#b04bff'];
 const PAL=[['#ffb3b8','#ff1f3d','#7a0010'],['#b3e0ff','#1a7dff','#00287a'],['#b8ffd0','#14e060','#00591f'],['#fff7b0','#ffd000','#9a5a00'],['#ecc0ff','#c030ff','#4a0080']];
 const cv=$('c'),x=cv.getContext('2d');
@@ -119,6 +120,7 @@ function fx(c,r,cell){const cx=bx+(c+.5)*cs,cy=by+(cell.ry+.5)*cs;
   [880,1175,1397,1760,2349].forEach((f,i)=>tn(f,f*1.01,.35,'sine',.12,i*.06));nz(.6,3000,9000,'highpass',.12);shake=12;flash=.5}}
 let last=performance.now();
 function update(dt){
+ if(BOT){parts.length=0;pops.length=0;rings.length=0;beams.length=0;fires.length=0;bolts.length=0;banner=null;flash=0;shake=0}
  let settled=true;
  for(const col of g)for(let r=0;r<ROWS;r++){const e=col[r];if(e.ry<r){settled=false;e.vy+=45*dt;e.ry=Math.min(r,e.ry+e.vy*dt);if(e.ry>=r)e.vy=0}}
  if(st==='play'){timeLeft-=dt;if(now()-lastT>1600&&combo)combo=0;
@@ -154,7 +156,7 @@ function draw(){
  if(fever>0){x.strokeStyle=`hsl(${22+Math.sin(now()/70)*16},100%,58%)`;x.lineWidth=6;x.shadowColor='#ff4500';x.shadowBlur=45;rr(bx-5,by-5,cs*COLS+10,cs*ROWS+10,14);x.stroke();x.shadowBlur=0}
  x.save();rr(bx,by,cs*COLS,cs*ROWS,8);x.clip();
  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++)gem(c,r,g[c][r]);
- x.restore();drawFl(true);
+ x.restore();if(!BOT)drawFl(true);
  for(const r of rings){x.globalAlpha=Math.max(0,r.l);x.strokeStyle=r.col;x.lineWidth=5;x.beginPath();x.arc(r.x,r.y,r.r,0,6.3);x.stroke()}
  x.globalAlpha=1;x.globalCompositeOperation='lighter';x.lineCap='round';x.lineJoin='round';
  for(const b of beams){const p=Math.min(1,b.t*1.6),a=1-b.t,d=b.h?cs*COLS:cs*ROWS,th=cs*(.25+.7*(1-b.t));
@@ -191,7 +193,7 @@ function table(hl,a){a=a||lb();if(!a.length)return'<div class="sub">還沒有紀
 const API='https://dash-a0d4a-default-rtdb.asia-southeast1.firebasedatabase.app';
 async function getTop(){try{const r=await fetch(API+'/scores.json?orderBy=%22s%22&limitToLast=10');if(!r.ok)throw 0;const o=await r.json()||{};return Object.entries(o).map(([id,v])=>({id,n:String(v.n||'').slice(0,12),s:+v.s||0})).sort((a,b)=>b.s-a.s)}catch(e){return null}}
 async function loadLb(hl){const el=$('lbx');if(!el)return;el.innerHTML='<div class="sub">載入排行榜中…</div>';const t=await getTop();const e2=$('lbx');if(!e2)return;e2.innerHTML=t?table(hl,t)+'<div class="sub">🌐 全球排行榜</div>':table(hl)+'<div class="sub">⚠️ 無法連線,顯示本機紀錄</div>'}
-async function submitLoad(id,s,nm){const el=$('lbx');let key=null;if(s>0){if(el)el.innerHTML='<div class="sub">上傳成績中…</div>';try{const r=await fetch(API+'/scores.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({n:nm.slice(0,12),s:s,t:{'.sv':'timestamp'}})});if(r.ok)key=(await r.json()).name}catch(e){}}loadLb(key||id)}
+async function submitLoad(id,s,nm){const el=$('lbx');let key=null;if(s>0&&!BOT){if(el)el.innerHTML='<div class="sub">上傳成績中…</div>';try{const r=await fetch(API+'/scores.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({n:nm.slice(0,12),s:s,t:{'.sv':'timestamp'}})});if(r.ok)key=(await r.json()).name}catch(e){}}loadLb(key||id)}
 function menu(){st='menu';$('ov').classList.remove('h');
  $('pn').innerHTML=`<h1>💎 DASH 爆爆</h1><div class="sub">60 秒內拿下最高分!</div><input id="nm" maxlength="12" placeholder="輸入你的暱稱" value="${esc(name)}"><button id="go">開始遊戲</button><div class="sub" style="margin-top:12px">🏆 排行榜 TOP 10</div><div id="lbx"></div><div class="rules">點擊 2 個以上相連的同色方塊消除<br>5 個以上:火箭 ↔↕(清整行/列)・7 個以上:💣炸彈・9 個以上:★彩虹(清同色全部)<br>連擊越多特效越華麗,填滿能量條進入 FEVER 雙倍分數</div>`;
  $('go').onclick=start;loadLb()}
