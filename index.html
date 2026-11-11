@@ -68,15 +68,14 @@ function award(n,cx,cy){const now=performance.now();combo=now-lastT<1600?combo+1
  if(L>=3)rings.push({x:cx,y:cy,r:0,l:1,max:cs*(2+L*.3),col:`hsl(${rnd(360)},100%,70%)`});
  bgHue=(bgHue+L*4)%360;
  sfxClear(n,combo)}
-function breakFever(){fever=0;fb=0;combo=0;lastT=0;fl.length=0;shake=0;flash=0;rings.length=0;beams.length=0;fires.length=0;bolts.length=0;banner={t:'FEVER 中斷!',l:1};tn(300,70,.35,'sawtooth',.25);nz(.25,1200,150,'lowpass',.3)}
 function tap(px,py){if(st!=='play')return;const c=Math.floor((px-bx)/cs),r=Math.floor((py-by)/cs);
  if(c<0||c>=COLS||r<0||r>=ROWS)return;const cell=g[c][r];if(Math.abs(cell.ry-r)>.4)return;idle=0;
  const cx=bx+(c+.5)*cs,cy=by+(r+.5)*cs;
- if(cell.sp){const n=clear(area(c,r,cell).concat([[c,r]]));settle();const wf=fever>0;award(n,cx,cy);if(wf&&n<=4)breakFever();return}
- const grp=group(c,r);if(grp.length<2){shake=4;beep(130,.1,'square');if(fever>0)breakFever();return}
+ if(cell.sp){const n=clear(area(c,r,cell).concat([[c,r]]));settle();award(n,cx,cy);return}
+ const grp=group(c,r);if(grp.length<2){shake=4;beep(130,.1,'square');return}
  const n=grp.length;let keep=null;
  if(n>=5){keep=cell;cell.sp=n>=9?4:n>=7?3:(Math.random()<.5?1:2)}
- const cnt=clear(grp,keep);settle();const wf=fever>0;award(cnt,cx,cy);if(wf&&n<=4)breakFever()}
+ const cnt=clear(grp,keep);settle();award(cnt,cx,cy)}
 function hasMove(){for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const e=g[c][r];if(e.sp)return true;if(c+1<COLS&&!g[c+1][r].sp&&g[c+1][r].k===e.k)return true;if(r+1<ROWS&&!g[c][r+1].sp&&g[c][r+1].k===e.k)return true}return false}
 // loop
 function buildSprites(){spr=[];const S=Math.ceil(cs*dpr);for(let k=0;k<5;k++){const o=document.createElement('canvas');o.width=o.height=S;const q=o.getContext('2d');q.scale(S/cs,S/cs);const P=PAL[k],s=cs-6,p=3,R=(a,b,w,h,r)=>{q.beginPath();q.roundRect?q.roundRect(a,b,w,h,r):q.rect(a,b,w,h)};
@@ -173,7 +172,6 @@ function draw(){
  for(const p of pops){x.globalAlpha=Math.max(0,p.l);x.font=`900 ${p.sz}px sans-serif`;x.lineWidth=4;x.strokeStyle='rgba(0,0,0,.6)';x.strokeText(p.t,p.x,p.y);x.fillStyle=p.col;x.fillText(p.t,p.x,p.y)}
  x.globalAlpha=1;x.restore();
  if(flash>0){x.fillStyle=`rgba(255,255,255,${flash*.5})`;x.fillRect(0,0,W,H)}
- if(BOT&&fever>0){x.fillStyle='#ff00ff';x.fillRect(bx-.4*cs,by+.4*cs,.2*cs,.2*cs)} // 機器人模式:FEVER 時在盤面左側畫一個洋紅色方塊,讓機器人知道要避開小組
  // HUD
  const pad=14,t0=Math.max(30,hud*.28);
  x.textAlign='left';x.fillStyle='#fff';x.font=`900 ${Math.min(40,hud*.34)}px sans-serif`;x.fillText(Math.round(sc).toLocaleString(),pad,t0);
@@ -197,7 +195,7 @@ async function getTop(){try{const r=await fetch(API+'/scores.json?orderBy=%22s%2
 async function loadLb(hl){const el=$('lbx');if(!el)return;el.innerHTML='<div class="sub">載入排行榜中…</div>';const t=await getTop();const e2=$('lbx');if(!e2)return;e2.innerHTML=t?table(hl,t)+'<div class="sub">🌐 全球排行榜</div>':table(hl)+'<div class="sub">⚠️ 無法連線,顯示本機紀錄</div>'}
 async function submitLoad(id,s,nm){const el=$('lbx');let key=null;if(s>0&&!BOT){if(el)el.innerHTML='<div class="sub">上傳成績中…</div>';try{const r=await fetch(API+'/scores.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({n:nm.slice(0,12),s:s,t:{'.sv':'timestamp'}})});if(r.ok)key=(await r.json()).name}catch(e){}}loadLb(key||id)}
 function menu(){st='menu';$('ov').classList.remove('h');
- $('pn').innerHTML=`<h1>DASH 爆爆</h1><div class="sub">60 秒內拿下最高分!</div><input id="nm" maxlength="12" placeholder="輸入你的暱稱" value="${esc(name)}"><button id="go">開始遊戲</button><div class="sub" style="margin-top:12px">🏆 排行榜 TOP 10</div><div id="lbx"></div><div class="rules">點擊 2 個以上相連的同色方塊消除<br>5 個以上:火箭 ↔↕(清整行/列)・7 個以上:💣炸彈・9 個以上:★彩虹(清同色全部)<br>連擊越多特效越華麗,填滿能量條進入 FEVER 雙倍分數<br>⚠️ FEVER 中點錯或一次消 4 格以下,FEVER 與連擊會立即中斷</div>`;
+ $('pn').innerHTML=`<h1>💎 DASH 爆爆</h1><div class="sub">60 秒內拿下最高分!</div><input id="nm" maxlength="12" placeholder="輸入你的暱稱" value="${esc(name)}"><button id="go">開始遊戲</button><div class="sub" style="margin-top:12px">🏆 排行榜 TOP 10</div><div id="lbx"></div><div class="rules">點擊 2 個以上相連的同色方塊消除<br>5 個以上:火箭 ↔↕(清整行/列)・7 個以上:💣炸彈・9 個以上:★彩虹(清同色全部)<br>連擊越多特效越華麗,填滿能量條進入 FEVER 雙倍分數</div>`;
  $('go').onclick=start;loadLb()}
 function start(){const v=$('nm').value.trim();name=v||'玩家';try{localStorage.setItem('dd_name',name)}catch(e){}
  ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume();
